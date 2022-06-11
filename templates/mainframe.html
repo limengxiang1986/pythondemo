@@ -1,0 +1,19 @@
+<table class="table table-hover" id="prtable">
+      <tr>
+            <th style="width: 150px;">TYPE_ID</th>
+            <th style="width: 150px;">TYPE_NAM</th>
+            <th style="width: 150px;">DM</th>
+            <th style="width: 150px;">CSZ</th>
+      </tr>
+      {%- for todo in todos %}
+      <tr >
+        <td>{{ todo.type_id }}</td>
+        <td>{{ todo.type_name}}</td>
+        <td>{{ todo.dm}}</td>
+        <td>{{ todo.csz}}</td>
+      </tr>
+      {%- endfor %}
+</table>
+
+
+

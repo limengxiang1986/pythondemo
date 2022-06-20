@@ -5,7 +5,11 @@ import threading
 
 from ldap.controls import SimplePagedResultsControl
 
+from jiratest import testjira
+from mnrcaapi.mnrcaapi import MNRCAAPIService
+
 from rcatrackingconfig import FC_addr_dict,addr_dict1,getjira,JiraRequest,gAdmin, gAuth,teams,jiraRequest1
+from utils import lastStr, findStr, copyObj
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -4561,21 +4565,21 @@ formposdict = {"datekey": ["completion_target_date"],
                                "correction_description": {"9": "D"}, "triggering_scenario": {"6": "D"},
                                "injection_time": {"11": "D"}},
                "rcaformrootcause": {
-                   "why_was_the_fault_introduced": {"row": 22, "span": 3,
+                   "why_was_the_fault_introduced": {"row": 22, "span": 3, "excelcoltitle":"Why was the fault introduced", "maxspan":6,
                                                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9, "why5": 11,
                                                                "rootcause": 12, "actionproposal": 13,
                                                                "root_cause_category": 14,
                                                                "root_cause_subcategory": 15, "rca_action_type": 16,
                                                                "assigned_to": 17, "ap_jiratask_id": 18,
                                                                "completion_target_date": 19}},
-                   "why_root_cause_was_not_found": {"row": 25, "span": 1,
+                   "why_root_cause_was_not_found": {"row": 25, "span": 1, "excelcoltitle":"Why root cause was not found with first set of attached symptoms", "maxspan":1,
                                                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9, "why5": 11,
                                                                "rootcause": 12, "actionproposal": 13,
                                                                "root_cause_category": 14,
                                                                "root_cause_subcategory": 15, "rca_action_type": 16,
                                                                "assigned_to": 17, "ap_jiratask_id": 18,
                                                                "completion_target_date": 19}},
-                   "why_correction_took_longer_than_fct_target": {"row": 26, "span": 1,
+                   "why_correction_took_longer_than_fct_target": {"row": 26, "span": 1, "excelcoltitle":"Why correction took longer than FCT target", "maxspan":1,
                                                                   "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
                                                                              "why5": 11,
                                                                              "rootcause": 12, "actionproposal": 13,
@@ -4584,34 +4588,7 @@ formposdict = {"datekey": ["completion_target_date"],
                                                                              "rca_action_type": 16,
                                                                              "assigned_to": 17, "ap_jiratask_id": 18,
                                                                              "completion_target_date": 19}}},
-               "rcaformescapedefect": {"why_not_system_test": {"row": 59, "span": 4,
-                                                               "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                                                          "why5": 11, "escape_cause": 12,
-                                                                          "actionproposal": 13,
-                                                                          "escape_cause_category": 14,
-                                                                          "escape_cause_subcategory": 15,
-                                                                          "eda_action_type": 16, "assigned_to": 17,
-                                                                          "ap_jiratask_id": 18,
-                                                                          "completion_target_date": 19,
-                                                                          "where_could_defect_have_been_detected": 20}},
-                                       "why_not_component_test": {"row": 50, "span": 3,
-                                                                  "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                                                             "why5": 11, "escape_cause": 12,
-                                                                             "actionproposal": 13,
-                                                                             "escape_cause_category": 14,
-                                                                             "escape_cause_subcategory": 15,
-                                                                             "eda_action_type": 16, "assigned_to": 17,
-                                                                             "ap_jiratask_id": 18,
-                                                                             "completion_target_date": 19}},
-                                       # "why_not_st_auto": {"row": 61, "span": 2,
-                                       #                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                       #                                "why5": 11, "escape_cause": 12,
-                                       #                                "actionproposal": 13, "escape_cause_category": 14,
-                                       #                                "escape_cause_subcategory": 15,
-                                       #                                "eda_action_type": 16, "assigned_to": 17,
-                                       #                                "ap_jiratask_id": 18, "completion_target_date": 19,
-                                       #                                "where_could_defect_have_been_detected": 20}},
-                                       "why_not_requirements_review": {"row": 34, "span": 3,
+               "rcaformescapedefect": {"why_not_requirements_review": {"row": 34, "span": 3, "excelcoltitle":"Why didn't Requirements reviews", "maxspan":5,
                                                                        "keypos": {"why1": 3, "why2": 5, "why3": 7,
                                                                                   "why4": 9, "why5": 11,
                                                                                   "escape_cause": 12,
@@ -4622,24 +4599,7 @@ formposdict = {"datekey": ["completion_target_date"],
                                                                                   "assigned_to": 17,
                                                                                   "ap_jiratask_id": 18,
                                                                                   "completion_target_date": 19}},
-                                       # "why_not_et_auto": {"row": 56, "span": 2,
-                                       #                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                       #                                "why5": 11, "escape_cause": 12,
-                                       #                                "actionproposal": 13, "escape_cause_category": 14,
-                                       #                                "escape_cause_subcategory": 15,
-                                       #                                "eda_action_type": 16, "assigned_to": 17,
-                                       #                                "ap_jiratask_id": 18, "completion_target_date": 19,
-                                       #                                "where_could_defect_have_been_detected": 20}},
-                                       "why_not_inspections": {"row": 46, "span": 3,
-                                                               "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                                                          "why5": 11, "escape_cause": 12,
-                                                                          "actionproposal": 13,
-                                                                          "escape_cause_category": 14,
-                                                                          "escape_cause_subcategory": 15,
-                                                                          "eda_action_type": 16, "assigned_to": 17,
-                                                                          "ap_jiratask_id": 18,
-                                                                          "completion_target_date": 19}},
-                                       "why_not_design_review": {"row": 38, "span": 3,
+                                       "why_not_design_review": {"row": 38, "span": 3,"excelcoltitle": "Why didn't Design reviews catch", "maxspan":5,
                                                                  "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
                                                                             "why5": 11, "escape_cause": 12,
                                                                             "actionproposal": 13,
@@ -4648,7 +4608,34 @@ formposdict = {"datekey": ["completion_target_date"],
                                                                             "eda_action_type": 16, "assigned_to": 17,
                                                                             "ap_jiratask_id": 18,
                                                                             "completion_target_date": 19}},
-                                       "why_not_entity_test": {"row": 54, "span": 4,
+                                       "why_not_analysis_tools": {"row": 42, "span": 3, "excelcoltitle":"Why didn't code analysis tools", "maxspan":5,
+                                                                  "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                                                             "why5": 11, "escape_cause": 12,
+                                                                             "actionproposal": 13,
+                                                                             "escape_cause_category": 14,
+                                                                             "escape_cause_subcategory": 15,
+                                                                             "eda_action_type": 16, "assigned_to": 17,
+                                                                             "ap_jiratask_id": 18,
+                                                                             "completion_target_date": 19}},
+                                       "why_not_inspections": {"row": 46, "span": 3, "excelcoltitle":"Why didn't code inspections catch", "maxspan":5,
+                                                               "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                                                          "why5": 11, "escape_cause": 12,
+                                                                          "actionproposal": 13,
+                                                                          "escape_cause_category": 14,
+                                                                          "escape_cause_subcategory": 15,
+                                                                          "eda_action_type": 16, "assigned_to": 17,
+                                                                          "ap_jiratask_id": 18,
+                                                                          "completion_target_date": 19}},
+                                       "why_not_component_test": {"row": 50, "span": 3, "excelcoltitle":"Why didn't unit or component test", "maxspan":5,
+                                                                  "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                                                             "why5": 11, "escape_cause": 12,
+                                                                             "actionproposal": 13,
+                                                                             "escape_cause_category": 14,
+                                                                             "escape_cause_subcategory": 15,
+                                                                             "eda_action_type": 16, "assigned_to": 17,
+                                                                             "ap_jiratask_id": 18,
+                                                                             "completion_target_date": 19}},
+                                       "why_not_entity_test": {"row": 54, "span": 4, "excelcoltitle":"Why didn't Entity Test test catch", "maxspan":5,
                                                                "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
                                                                           "why5": 11, "escape_cause": 12,
                                                                           "actionproposal": 13,
@@ -4658,16 +4645,17 @@ formposdict = {"datekey": ["completion_target_date"],
                                                                           "ap_jiratask_id": 18,
                                                                           "completion_target_date": 19,
                                                                           "where_could_defect_have_been_detected": 20}},
-                                       "why_not_analysis_tools": {"row": 42, "span": 3,
-                                                                  "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
-                                                                             "why5": 11, "escape_cause": 12,
-                                                                             "actionproposal": 13,
-                                                                             "escape_cause_category": 14,
-                                                                             "escape_cause_subcategory": 15,
-                                                                             "eda_action_type": 16, "assigned_to": 17,
-                                                                             "ap_jiratask_id": 18,
-                                                                             "completion_target_date": 19}},
-                                       "why_customer_opened_a_ticket_on_a_known_defect": {"row": 64, "span": 2,
+                                       "why_not_system_test": {"row": 59, "span": 4, "excelcoltitle":"Why didn't System Test catch", "maxspan":5,
+                                                               "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                                                          "why5": 11, "escape_cause": 12,
+                                                                          "actionproposal": 13,
+                                                                          "escape_cause_category": 14,
+                                                                          "escape_cause_subcategory": 15,
+                                                                          "eda_action_type": 16, "assigned_to": 17,
+                                                                          "ap_jiratask_id": 18,
+                                                                          "completion_target_date": 19,
+                                                                          "where_could_defect_have_been_detected": 20}},
+                                       "why_customer_opened_a_ticket_on_a_known_defect": {"row": 64, "span": 2, "excelcoltitle":"Program EDA (Optional)", "maxspan":4,
                                                                                           "keypos": {"why1": 3,
                                                                                                      "why2": 5,
                                                                                                      "why3": 7,
@@ -4680,7 +4668,25 @@ formposdict = {"datekey": ["completion_target_date"],
                                                                                                      "eda_action_type": 16,
                                                                                                      "assigned_to": 17,
                                                                                                      "ap_jiratask_id": 18,
-                                                                                                     "completion_target_date": 19}}},
+                                                                                                     "completion_target_date": 19}}
+
+                                       # "why_not_st_auto": {"row": 61, "span": 2,
+                                       #                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                       #                                "why5": 11, "escape_cause": 12,
+                                       #                                "actionproposal": 13, "escape_cause_category": 14,
+                                       #                                "escape_cause_subcategory": 15,
+                                       #                                "eda_action_type": 16, "assigned_to": 17,
+                                       #                                "ap_jiratask_id": 18, "completion_target_date": 19,
+                                       #                                "where_could_defect_have_been_detected": 20}},
+                                       # "why_not_et_auto": {"row": 56, "span": 2,
+                                       #                     "keypos": {"why1": 3, "why2": 5, "why3": 7, "why4": 9,
+                                       #                                "why5": 11, "escape_cause": 12,
+                                       #                                "actionproposal": 13, "escape_cause_category": 14,
+                                       #                                "escape_cause_subcategory": 15,
+                                       #                                "eda_action_type": 16, "assigned_to": 17,
+                                       #                                "ap_jiratask_id": 18, "completion_target_date": 19,
+                                       #                                "where_could_defect_have_been_detected": 20}},
+                                       },
                "lineorder": [("why_was_the_fault_introduced", "Why was the fault introduced?"),
                              ("why_root_cause_was_not_found",
                               "Why root cause was not found with first set of attached symptoms?"),
@@ -4736,50 +4742,38 @@ def getXtDmByText(xtdmlist, text):
             return i["dm"].strip()
 
 def adjustformdict(formposdict, sheet):
-    # if all element in right position? adjust if not.
-    # lineorder
-    fddrcaobj = {"rcaformbase": {}}
-    xtdmlist = get_data_by_type_all()
+    newformposdict = copyObj(formposdict)
     try:
-        for table in [("rcaformrootcause", formposdict["rcaformrootcause"]),
-                      ("rcaformescapedefect", formposdict["rcaformescapedefect"])]:
-            fddrcaobj[table[0]] = {}
+        for table in [("rcaformrootcause", newformposdict["rcaformrootcause"]),
+                      ("rcaformescapedefect", newformposdict["rcaformescapedefect"])]:
             for i, j in table[1].items():
-                fddrcaobj[table[0]][i] = []
                 row = j["row"]
+                span = j["span"]
+                newspan = j["span"]
+                maxspan = j["maxspan"]
                 for ix in range(1, 100):
                     pos = tranExcelPos({ix: 'B'})
                     cellvalue = sheet.cell(pos[0], pos[1]).value
-                    dictkey = i[i.index(i)]
-                    if cellvalue == i:
-                        row = ix
-                        print(str(cellvalue) + '   , ' + str(row) )
-                span = j["span"]
-                for r in range(0, span):
-                    newline = {}
-                    fddrcaobj[table[0]][i].append(newline)
-                    rowvalid = True
-                    for k, v in j["keypos"].items():
-                        try:
-                            cellvaluewhy1 = sheet.cell(row + r, j["keypos"]["why1"]).value
-                            if cellvaluewhy1 and 'Why 1' in cellvaluewhy1:
-                                rowvalid = False
-                            if not rowvalid:
-                                continue
-                            cellvalue = sheet.cell(row + r, v).value
-                            if k in formposdict["selectkey"]:
-                                newline[k] = {"dm": getXtDmByText(xtdmlist,
-                                                                  cellvalue if cellvalue else ''),
-                                              "text": cellvalue if cellvalue else ''}
-                            elif k in formposdict["datekey"]:
-                                newline[k] = str(cellvalue).replace(' 00:00:00', '') if cellvalue else ''
-                            else:
-                                newline[k] = cellvalue.replace('_x000D_','') if cellvalue else ''
-                        except:
-                            print("%s, %s, %s" %(k,v,traceback.format_exc()))
+                    if cellvalue and findStr(cellvalue,j["excelcoltitle"],False):
+                        newrow = ix
+                if row != newrow:
+                    j["row"] = newrow
+                for ispan in range(1,maxspan):
+                    posc = tranExcelPos({int(j["row"])+ispan: 'C'})
+                    cellvaluec = sheet.cell(posc[0], posc[1]).value
+                    if cellvaluec and cellvaluec != None and len(cellvaluec)>1 and cellvaluec.find('Why 1')==0:
+                        newspan = ispan
+                        break
+                    posb = tranExcelPos({int(j["row"])+ispan: 'B'})
+                    cellvalueb = sheet.cell(posb[0], posb[1]).value
+                    if cellvalueb and cellvalueb != None and len(cellvalueb)>1:
+                        j["span"] = ispan
+                        break
+                if span != newspan:
+                    j["span"] = newspan
     except Exception as e:
         print(str(e))
-    return formposdict
+    return newformposdict
 
 def parxlstopojo(fpath):
     # parse file
@@ -4787,7 +4781,9 @@ def parxlstopojo(fpath):
     sheet = workbook['RcaEda']
     # format the formposdict
     localformposdict = formposdict
-    localformposdict = adjustformdict(formposdict,sheet)
+    print(localformposdict)
+    localformposdict = adjustformdict(localformposdict,sheet)
+    print(localformposdict)
     return
     # generate pronto_json
     fddrcaobj = {"rcaformbase": {}}
@@ -4846,6 +4842,22 @@ def parxlstopojo(fpath):
     except Exception as e:
         print(str(e))
     return fddrcaobj
+
+
+class A(object):
+    def __init__(self):
+        self.nameaa = 'aa'
+
+    def funca(self):
+        print('function a %s' % self.nameaa)
+
+
+class B(A):
+    def __init__(self):
+        self.namebb = 'bb'
+        A.__init__(self)
+    def funcb(self):
+        print('function b %s' % self.namebb)
 
 
 if __name__ == '__main__':
@@ -4974,7 +4986,7 @@ if __name__ == '__main__':
     # str1 = '[{"model": "mnrcahome.mnrcametricstable", "pk": "MNRCA-19246", "fields": {"JiraIssueParentTaskId": "MNRCA-19245", "JiraIssueSummary": "CAS-182423-Z9Q3:[Bharti mMIMO NPI] Sector beam ratio increased from 10% to 75% during high load (Kerala)", "JiraIssueType": "Analysis subtask", "JiraIssueCaseType": "RCA", "JiraIssueStatus": "Resolved", "JiraIssueParentStatus": "Closed", "JiraIssueAssignee": "Jiang, Zhilong (NSB - CN/Hangzhou)", "JiraIssueReporter": "Xia, Aaron (NSB - CN/Hangzhou)", "PRID": "CAS-182423-Z9Q3", "FAID": "FA449611", "PRTitle": "[Bharti mMIMO NPI] Sector beam ratio increased from 10% to 75% during high load (Kerala)", "PRRcaEdaAssessor": "zhilong.jiang@nokia-sbell.com", "PRAttached": "", "PRSeverity": "B - Major", "PRGroupInCharge": "NIHZSMAC", "JiraIssueCreatedDate": "2019-01-25", "JiraIssueParentCreatedDate": "2019-01-25", "JiraIssueResolutionDate": "2019-03-01", "JiraIssueParentResolutionDate": "2019-06-03", "JiraIssueDueDate": "2019-02-20", "JiraIssueOpenDays": 35, "JiraIssueParentOpenDays": 129, "JiraIssueAssigneeSquadGroup": "NSB MN RAN L2 SW 3 CN 1 SG", "JiraIssueAssigneeSquadGroupLead": "Zhang, Yijie (NSB - CN/Hangzhou)", "JiraIssueAssigneeTribe": "NSB MN RAN L2 SW 3 CN", "JiraIssueAssigneeTribeLead": "Chen, Zhuofei (NSB - CN/Hangzhou)", "JiraIssueOverDue": "Yes", "JiraIssueParentOverDue": "Yes", "JiraIssueOverDueReason": "", "JiraIssueParentOverDueReason": "", "ReportedBy": "Customer"}}, {"model": "mnrcahome.mnrcametricstable", "pk": "MNRCA-19248", "fields": {"JiraIssueParentTaskId": "MNRCA-19247", "JiraIssueSummary": "CAS-189164-N5K3:[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "JiraIssueType": "Analysis subtask", "JiraIssueCaseType": "RCA and EDA", "JiraIssueStatus": "Resolved", "JiraIssueParentStatus": "Resolved", "JiraIssueAssignee": "Jiang, Zhilong (NSB - CN/Hangzhou)", "JiraIssueReporter": "Xia, Aaron (NSB - CN/Hangzhou)", "PRID": "CAS-189164-N5K3", "FAID": "FA463847", "PRTitle": "[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "PRRcaEdaAssessor": "zhilong.jiang@nokia-sbell.com", "PRAttached": "", "PRSeverity": "B - Major", "PRGroupInCharge": "NIHZSMAC", "JiraIssueCreatedDate": "2019-01-25", "JiraIssueParentCreatedDate": "2019-01-25", "JiraIssueResolutionDate": "2019-02-22", "JiraIssueParentResolutionDate": "2019-03-06", "JiraIssueDueDate": "2019-02-22", "JiraIssueOpenDays": 28, "JiraIssueParentOpenDays": 40, "JiraIssueAssigneeSquadGroup": "NSB MN RAN L2 SW 3 CN 1 SG", "JiraIssueAssigneeSquadGroupLead": "Zhang, Yijie (NSB - CN/Hangzhou)", "JiraIssueAssigneeTribe": "NSB MN RAN L2 SW 3 CN", "JiraIssueAssigneeTribeLead": "Chen, Zhuofei (NSB - CN/Hangzhou)", "JiraIssueOverDue": "No", "JiraIssueParentOverDue": "Yes", "JiraIssueOverDueReason": "", "JiraIssueParentOverDueReason": "", "ReportedBy": "Customer"}}, {"model": "mnrcahome.mnrcametricstable", "pk": "MNRCA-19685", "fields": {"JiraIssueParentTaskId": "MNRCA-19247", "JiraIssueSummary": "CAS-189164-N5K3:[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "JiraIssueType": "Action for RCA", "JiraIssueCaseType": "", "JiraIssueStatus": "Resolved", "JiraIssueParentStatus": "Resolved", "JiraIssueAssignee": "Jiang, Zhilong (NSB - CN/Hangzhou)", "JiraIssueReporter": "Jiang, Zhilong (NSB - CN/Hangzhou)", "PRID": "CAS-189164-N5K3", "FAID": "FA463847", "PRTitle": "[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "PRRcaEdaAssessor": "zhilong.jiang@nokia-sbell.com", "PRAttached": "", "PRSeverity": "B - Major", "PRGroupInCharge": "NIHZSMAC", "JiraIssueCreatedDate": "2019-02-22", "JiraIssueParentCreatedDate": "2019-01-25", "JiraIssueResolutionDate": "2019-03-21", "JiraIssueParentResolutionDate": "2019-03-06", "JiraIssueDueDate": "2019-03-31", "JiraIssueOpenDays": 27, "JiraIssueParentOpenDays": 40, "JiraIssueAssigneeSquadGroup": "NSB MN RAN L2 SW 3 CN 1 SG", "JiraIssueAssigneeSquadGroupLead": "Zhang, Yijie (NSB - CN/Hangzhou)", "JiraIssueAssigneeTribe": "NSB MN RAN L2 SW 3 CN", "JiraIssueAssigneeTribeLead": "Chen, Zhuofei (NSB - CN/Hangzhou)", "JiraIssueOverDue": "No", "JiraIssueParentOverDue": "Yes", "JiraIssueOverDueReason": "", "JiraIssueParentOverDueReason": "", "ReportedBy": "Customer"}}, {"model": "mnrcahome.mnrcametricstable", "pk": "MNRCA-19686", "fields": {"JiraIssueParentTaskId": "MNRCA-19247", "JiraIssueSummary": "CAS-189164-N5K3:[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "JiraIssueType": "Action for RCA", "JiraIssueCaseType": "", "JiraIssueStatus": "Resolved", "JiraIssueParentStatus": "Resolved", "JiraIssueAssignee": "Jiang, Zhilong (NSB - CN/Hangzhou)", "JiraIssueReporter": "Jiang, Zhilong (NSB - CN/Hangzhou)", "PRID": "CAS-189164-N5K3", "FAID": "FA463847", "PRTitle": "[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "PRRcaEdaAssessor": "zhilong.jiang@nokia-sbell.com", "PRAttached": "", "PRSeverity": "B - Major", "PRGroupInCharge": "NIHZSMAC", "JiraIssueCreatedDate": "2019-02-22", "JiraIssueParentCreatedDate": "2019-01-25", "JiraIssueResolutionDate": "2019-04-24", "JiraIssueParentResolutionDate": "2019-03-06", "JiraIssueDueDate": "2019-04-30", "JiraIssueOpenDays": 61, "JiraIssueParentOpenDays": 40, "JiraIssueAssigneeSquadGroup": "NSB MN RAN L2 SW 3 CN 1 SG", "JiraIssueAssigneeSquadGroupLead": "Zhang, Yijie (NSB - CN/Hangzhou)", "JiraIssueAssigneeTribe": "NSB MN RAN L2 SW 3 CN", "JiraIssueAssigneeTribeLead": "Chen, Zhuofei (NSB - CN/Hangzhou)", "JiraIssueOverDue": "No", "JiraIssueParentOverDue": "Yes", "JiraIssueOverDueReason": "", "JiraIssueParentOverDueReason": "", "ReportedBy": "Customer"}}, {"model": "mnrcahome.mnrcametricstable", "pk": "MNRCA-19687", "fields": {"JiraIssueParentTaskId": "MNRCA-19247", "JiraIssueSummary": "CAS-189164-N5K3:[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "JiraIssueType": "Action for RCA", "JiraIssueCaseType": "", "JiraIssueStatus": "Resolved", "JiraIssueParentStatus": "Resolved", "JiraIssueAssignee": "Jiang, Zhilong (NSB - CN/Hangzhou)", "JiraIssueReporter": "Jiang, Zhilong (NSB - CN/Hangzhou)", "PRID": "CAS-189164-N5K3", "FAID": "FA463847", "PRTitle": "[VF mMIMO TL18SP NPI] [KPI] mMIMO sites are throughput dip randomly", "PRRcaEdaAssessor": "zhilong.jiang@nokia-sbell.com", "PRAttached": "", "PRSeverity": "B - Major", "PRGroupInCharge": "NIHZSMAC", "JiraIssueCreatedDate": "2019-02-22", "JiraIssueParentCreatedDate": "2019-01-25", "JiraIssueResolutionDate": "2019-03-28", "JiraIssueParentResolutionDate": "2019-03-06", "JiraIssueDueDate": "2019-03-31", "JiraIssueOpenDays": 34, "JiraIssueParentOpenDays": 40, "JiraIssueAssigneeSquadGroup": "NSB MN RAN L2 SW 3 CN 1 SG", "JiraIssueAssigneeSquadGroupLead": "Zhang, Yijie (NSB - CN/Hangzhou)", "JiraIssueAssigneeTribe": "NSB MN RAN L2 SW 3 CN", "JiraIssueAssigneeTribeLead": "Chen, Zhuofei (NSB - CN/Hangzhou)", "JiraIssueOverDue": "No", "JiraIssueParentOverDue": "Yes", "JiraIssueOverDueReason": "", "JiraIssueParentOverDueReason": "", "ReportedBy": "Customer"}}]'
     # print(json.loads(str1))
 
-    parxlstopojo('C:\\Work\\templates\\RCA_EDA_Analysis_Template_LTE_BL-mode.xlsx')
+    # parxlstopojo('C:\\Work\\templates\\RCA_EDA_Analysis_Template_LTE_BL-mode.xlsx')
 
     # stra = '123_asdf_dfsk'
     # print('rfind:'+str(stra.rfind('g')))
@@ -4982,6 +4994,9 @@ if __name__ == '__main__':
     # print('index:'+str(stra.rindex('g',-5)))
     # print('index:'+str(stra.index('g',-5)))
 
+    testjira()
+    # b = B()
+    # b.funca()
 
 
 
